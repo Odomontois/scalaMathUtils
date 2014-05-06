@@ -1,61 +1,27 @@
-package odomath
+package odomath.linear
+
+import scala.collection.immutable.IndexedSeq
+import odomath.linear.Vector._
 
 /**
- * User: admin
- * Date: 06.02.13
- * Time: 2:28
+ * User: Oleg
+ * Date: 06-May-14
+ * Time: 23:17
  */
-package object linear {
+class Matrix[N](private[linear] val v: IndexedSeq[Vector[N]]) {
+  def apply(i: Int) = v(i)
 
-  import collection.immutable.IndexedSeq
+  override def toString = v mkString "\n"
 
-  class Vector[N](private[linear] val x: IndexedSeq[N]) {
-    def apply(i: Int) = x(i)
+  def size = v.size
 
-    def size = x.size
+  def t = new Matrix[N](0 until this(0).size map (i => new Vector[N](0 until size map (j => this(j)(i)))))
+}
 
-    override def toString = s"[${x mkString "\t "}]"
-  }
+object Matrix {
+  def identity[N](n: Int)(implicit algebra: Numeric[N]) = new Matrix[N](0 until n map (i => new Vector[N](0 until n map (j => if (i == j) algebra.one else algebra.zero))))
 
-  object Vector {
-    def apply[N](x: N*) = new Vector[N](x toIndexedSeq)
-  }
-
-  implicit class VectorOps[N](self: Vector[N])(implicit algebra: Numeric[N]) {
-
-    import algebra._
-
-    def +(other: Vector[N]) = new Vector[N](self.x zip other.x map {case (x, y) => x + y})
-
-    def *(q: N) = new Vector[N](self.x map (_ * q))
-
-    def unary_- = new Vector[N](self.x map negate)
-
-    def -(other: Vector[N]) = this + (-other)
-
-    def *(other: Vector[N]) = self.x zip other.x map {case (x, y) => x * y} reduce plus
-
-    def *:(q: N) = this * q
-
-    def ~(other: Vector[N]) = new Vector[N](0 to (self.size + other.size - 2) map (k =>
-      Math.max(0, k - other.size + 1) to Math.min(k, self.size - 1) map (i => self(i) * other(k - i)) sum) toVector)
-  }
-
-  class Matrix[N](private[linear] val v: IndexedSeq[Vector[N]]) {
-    def apply(i: Int) = v(i)
-
-    override def toString = v mkString "\n"
-
-    def size = v.size
-
-    def t = new Matrix[N](0 until this(0).size map (i => new Vector[N](0 until size map (j => this(j)(i)))))
-  }
-
-  object Matrix {
-    def identity[N](n: Int)(implicit algebra: Numeric[N]) = new Matrix[N](0 until n map (i => new Vector[N](0 until n map (j => if (i == j) algebra.one else algebra.zero))))
-
-    def apply[N](v: Seq[N]*) = new Matrix[N](v map (x => new Vector[N](x toIndexedSeq)) toIndexedSeq)
-  }
+  def apply[N](v: Seq[N]*) = new Matrix[N](v map (x => new Vector[N](x toIndexedSeq)) toIndexedSeq)
 
   implicit class MatrixOps[N](self: Matrix[N])(implicit algebra: Fractional[N]) {
 
@@ -110,7 +76,6 @@ package object linear {
     }
 
     def unary_! = invert.get
-
   }
-
 }
+
