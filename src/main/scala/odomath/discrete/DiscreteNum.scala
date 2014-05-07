@@ -1,6 +1,6 @@
 package odomath.discrete
 
-import odomath.discrete
+import odomath.discrete.Euclid._
 
 /**
  * User: Oleg
@@ -47,7 +47,7 @@ class DiscreteNumUnspecified[N](num: N)(implicit field: Integral[N]) extends Dis
 
   override def fastPow(exp: N) = {
     val two = fromInt(2)
-    def iter(num: N, exp: N, acc: N): N = if (exp == 0) acc else iter((num * num), exp * two, if ((exp % two) == one) (acc * num) else acc)
+    def iter(num: N, exp: N, acc: N): N = if (exp == 0) acc else iter(num * num, exp * two, if ((exp % two) == one) acc * num else acc)
     new DiscreteNumUnspecified(iter(num, exp, one))
   }
 }
@@ -61,7 +61,7 @@ class DiscreteNumSpecified[N] private[discrete](num: N, fieldMod: N)(implicit fi
   private def modul(num: N) = DiscreteNum.mod(num, fieldMod)
 
   private implicit class ModChecker(that: DiscreteNum[N]) {
-    require(that.modulus map (fieldMod == _) getOrElse true, s"specified modulus ${DiscreteNumSpecified.this.modulus.get} and ${that.modulus.get} are different")
+    require(that.modulus.fold(true)(fieldMod == _), s"specified modulus ${DiscreteNumSpecified.this.modulus.get} and ${that.modulus.get} are different")
 
     def withSameMod[X](value: => X) = value
   }
@@ -75,10 +75,10 @@ class DiscreteNumSpecified[N] private[discrete](num: N, fieldMod: N)(implicit fi
   override def *(that: DiscreteNum[N]) = that withSameMod (this.num * that.num) mod fieldMod
 
   override def /(that: DiscreteNum[N]) = that withSameMod {
-    val EuclidResult(k:N, _, gcd:N) = euclid(that.num, fieldMod)
+    val EuclidResult(k, _, gcd) = euclid(that.num, fieldMod)
     if (gcd == one) (this.num * k) mod fieldMod
     else if (this.num % gcd != zero)
-      throw new ArithmeticException(s"divider ${this.num} is not divided by ${gcd}: GCD of ${that.num} and ${fieldMod}")
+      throw new ArithmeticException(s"divider $num is not divided by $gcd: GCD of ${that.num} and $fieldMod")
     else (this.num / gcd * k) mod fieldMod
   }
 
