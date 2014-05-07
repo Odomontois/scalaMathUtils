@@ -155,10 +155,7 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
         val lower = solve(possibility.value +: solution)
         removeList.restoreAll
         lower
-      }).find(_ != None) match {
-        case None => None
-        case Some(thing) => thing
-      }
+      }).find(_ != None).flatten
     }
     Try(solve(initial)).toOption.flatten
   }
