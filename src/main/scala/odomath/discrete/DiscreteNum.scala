@@ -1,5 +1,7 @@
 package odomath.discrete
 
+import odomath.discrete
+
 /**
  * User: Oleg
  * Date: 06-May-14
@@ -73,7 +75,7 @@ class DiscreteNumSpecified[N] private[discrete](num: N, fieldMod: N)(implicit fi
   override def *(that: DiscreteNum[N]) = that withSameMod (this.num * that.num) mod fieldMod
 
   override def /(that: DiscreteNum[N]) = that withSameMod {
-    val EuclidResult(k, _, gcd) = euclid(that.num, fieldMod)
+    val EuclidResult(k:N, _, gcd:N) = euclid(that.num, fieldMod)
     if (gcd == one) (this.num * k) mod fieldMod
     else if (this.num % gcd != zero)
       throw new ArithmeticException(s"divider ${this.num} is not divided by ${gcd}: GCD of ${that.num} and ${fieldMod}")

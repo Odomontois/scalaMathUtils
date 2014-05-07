@@ -1,5 +1,7 @@
 package odomath
 
+import odomath.discrete.Euclid
+import Euclid.euclid
 /**
  * Created with IntelliJ IDEA.
  * User: Oleg
@@ -9,23 +11,8 @@ package odomath
  */
 package object discrete {
 
+
   implicit val rationalOps = RationalOps
-
-  case class EuclidResult[N](k: N, l: N, gcd: N)(implicit field: Integral[N]) {
-    def swap = EuclidResult(l, k, gcd)
-  }
-
-  def euclid[N](a: N, b: N)(implicit field: Integral[N]): EuclidResult[N] = {
-    if (b == field.zero) EuclidResult[N](field.one, field.zero, a)
-    else if (field.lt(a, b)) euclid(b, a).swap
-    else {
-      import field._
-      val d = quot(a, b)
-      val r = rem(a, b)
-      val EuclidResult(k, l, gcd) = euclid(b, r)
-      EuclidResult(l, minus(k, times(l, d)), gcd)
-    }
-  }
 
   def gcd[N](a: N, b: N)(implicit field: Integral[N]): N = euclid(field.abs(a), field.abs(b)).gcd
 
