@@ -2,12 +2,14 @@ package odomath.algo
 
 import collection.mutable
 import scala.util.Try
+import odoutil._
 
 /**
  * User: Oleg
  * Date: 03.02.13
  * Time: 13:15
  */
+
 class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
 
   trait Removable {
@@ -121,7 +123,7 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
   object Possibility {
 
     var possibilities = new Deque[Possibility]
-    val byValue = mutable.Map.empty[P, DequeItem[Possibility]].withDefault(value => possibilities.add(Possibility(value)))
+    val byValue = mutable.Map.empty[P, DequeItem[Possibility]].updateDefault(value => possibilities.add(Possibility(value)))
 
     def initialize {
       for (value <- all) {
@@ -135,7 +137,7 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
   object Constraint {
     var constraints = new Deque[Constraint]
 
-    val byValue = mutable.Map.empty[C, DequeItem[Constraint]].withDefault(value => constraints.add(Constraint(value)))
+    val byValue = mutable.Map.empty[C, DequeItem[Constraint]].updateDefault(value => constraints.add(Constraint(value)))
   }
 
   def initialize {
