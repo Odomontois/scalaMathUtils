@@ -1,28 +1,14 @@
 package odomath.algo
 
 import collection.mutable
+import scala.util.Try
 
 /**
- * User: admin
+ * User: Oleg
  * Date: 03.02.13
  * Time: 13:15
  */
 class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
-
-  class DefaultMap[A, B](f: A => B) extends ((A) => B) {
-    val map = mutable.Map.empty[A, B]
-
-    def apply(key: A): B = {
-      if (map.contains(key)) map(key)
-      else {
-        val value = f(key)
-        map.update(key, value)
-        value
-      }
-    }
-
-    override def toString = map.toString
-  }
 
   trait Removable {
     def remove
@@ -80,8 +66,6 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
       val vars2remove = poss2remove.flatMap(_.value.variants.toList).map(_.value)
       List.empty[Removable] ++ cons2remove ++ poss2remove ++ vars2remove
     }
-
-
   }
 
   case class Constraint(value: C) extends DequeObject {
@@ -137,7 +121,7 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
   object Possibility {
 
     var possibilities = new Deque[Possibility]
-    val byValue = new DefaultMap[P, DequeItem[Possibility]](value => possibilities.add(Possibility(value)))
+    val byValue = mutable.Map.empty[P, DequeItem[Possibility]].withDefault(value => possibilities.add(Possibility(value)))
 
     def initialize {
       for (value <- all) {
@@ -151,7 +135,8 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
   object Constraint {
     var constraints = new Deque[Constraint]
 
-    val byValue = new DefaultMap[C, DequeItem[Constraint]](value => constraints.add(Constraint(value)))  }
+    val byValue = mutable.Map.empty[C, DequeItem[Constraint]].withDefault(value => constraints.add(Constraint(value)))
+  }
 
   def initialize {
     Possibility.initialize
@@ -162,7 +147,6 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
     initialize
     def solve(solution: Seq[P]): Option[Seq[P]] = if (Constraint.constraints.isEmpty) Some(solution)
     else {
-      //        println(solution.length, Constraint.constraints.toList.length)
       val constraint = Constraint.constraints.toList.map(_.value).minBy(_.variantCount)
       if (constraint.variantCount == 0) None
       else constraint.variants.toList.map(_.value.possibility.value).toStream.map(possibility => {
@@ -176,14 +160,6 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
         case Some(thing) => thing
       }
     }
-    try {
-      solve(initial)
-    }
-    catch {
-      case ex: Throwable => {
-        ex.printStackTrace(System.err)
-        None
-      }
-    }
+    Try(solve(initial)).toOption.flatten
   }
 }

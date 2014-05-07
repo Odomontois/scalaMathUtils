@@ -58,28 +58,27 @@ class DiscreteNumSpecified[N] private[discrete](num: N, fieldMod: N)(implicit fi
 
   private def modul(num: N) = DiscreteNum.mod(num, fieldMod)
 
-  private def withSameMod[X](that: DiscreteNum[N], value: => X) = {
-    require(that.modulus match {
-      case Some(modulus) => modulus == fieldMod
-      case None => true
-    }, "specified modulus " + this.modulus.get + " and " + that.modulus.get + " are different")
-    value
+  private implicit class ModChecker(that: DiscreteNum[N]) {
+    require(that.modulus map (fieldMod == _) getOrElse true, s"specified modulus ${DiscreteNumSpecified.this.modulus.get} and ${that.modulus.get} are different")
+
+    def withSameMod[X](value: => X) = value
   }
 
   override def modulus = Some(fieldMod)
 
-  override def -(that: DiscreteNum[N]) = withSameMod(that, (this.num - that.num) mod fieldMod)
+  override def -(that: DiscreteNum[N]) = that withSameMod (this.num - that.num) mod fieldMod
 
-  override def +(that: DiscreteNum[N]) = withSameMod(that, (this.num + that.num) mod fieldMod)
+  override def +(that: DiscreteNum[N]) = that withSameMod (this.num + that.num) mod fieldMod
 
-  override def *(that: DiscreteNum[N]) = withSameMod(that, (this.num * that.num) mod fieldMod)
+  override def *(that: DiscreteNum[N]) = that withSameMod (this.num * that.num) mod fieldMod
 
-  override def /(that: DiscreteNum[N]) = withSameMod(that, {
+  override def /(that: DiscreteNum[N]) = that withSameMod {
     val EuclidResult(k, _, gcd) = euclid(that.num, fieldMod)
     if (gcd == one) (this.num * k) mod fieldMod
-    else if (this.num % gcd != zero) throw new ArithmeticException("divider " + this.num + " is not divided by " + gcd + ": GCD of " + that.num + " and " + fieldMod)
+    else if (this.num % gcd != zero)
+      throw new ArithmeticException(s"divider ${this.num} is not divided by ${gcd}: GCD of ${that.num} and ${fieldMod}")
     else (this.num / gcd * k) mod fieldMod
-  })
+  }
 
   override def fastPow(exp: N) = {
     val two = fromInt(2)
@@ -91,15 +90,12 @@ class DiscreteNumSpecified[N] private[discrete](num: N, fieldMod: N)(implicit fi
 }
 
 object DiscreteNum {
-  implicit def toDiscreteNum[N](num: N)(implicit field: Integral[N]):DiscreteNum[N] = new DiscreteNumUnspecified[N](num)
-
+  implicit def toDiscreteNum[N](num: N)(implicit field: Integral[N]): DiscreteNum[N] = new DiscreteNumUnspecified[N](num)
 
   def mod[N](num: N, mod: N)(implicit field: Integral[N]) = {
-
     import field._
-
-    val r = rem(num, mod)
-    if (lt(r, zero)) plus(r, mod) else r
+    val r = num % mod
+    if (lt(r, zero)) r + mod else r
   }
 
 }

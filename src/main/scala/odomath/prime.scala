@@ -10,6 +10,11 @@ import collection.mutable
  * To change this template use File | Settings | File Templates.
  */
 package object prime {
+  /**
+   * generate ascending list of prime numbers
+   * @param bound upper bound of generated number
+   * @return Indexed sequence of prime numbers
+   */
   def genPrimes(bound: Int) = {
     val sieve = mutable.BitSet()
 
@@ -57,16 +62,6 @@ package object prime {
     produce((0 until primes.length) map (i => (primes(i), i, handle(1, 1, primes(i), default))) toList)
   }
 
-  def genFactorizationsFuncOld[X, V](handle: (Int, Int, Int, X, V) => (X, V), default: X, start: V)
-                                    (bound: Int)(primeBound: Int = bound): V = {
-    var result = start
-    genFactorizations[X]((num, last, prime, x) => {
-      val (newX, newResult) = handle(num, last, prime, x, result)
-      result = newResult
-      newX
-    }, default)(bound)(primeBound)
-    result
-  }
 
   //Pure functional implementation
   def genFactorizationsFunc[X, V](handle: (Int, Int, Int, X, V) => (X, V), default: X, start: V)
