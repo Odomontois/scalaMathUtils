@@ -9,7 +9,6 @@ import odoutil._
  * Date: 03.02.13
  * Time: 13:15
  */
-
 class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
 
   trait Removable {
@@ -26,9 +25,7 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
     var prev: DequeItemLeft
   }
 
-  sealed trait DequeObject
-
-  case class DequeItem[T <: DequeObject](value: T, override var prev: DequeItemLeft) extends DequeItemLeft with DequeItemRight with Removable {
+  case class DequeItem[T](value: T, override var prev: DequeItemLeft) extends DequeItemLeft with DequeItemRight with Removable {
     override var next = prev.next
     prev.next = this
 
@@ -45,55 +42,7 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
     override def toString = "di/" + value.toString
   }
 
-  implicit class RemovableList[Q <: Removable](seq: Seq[Q]) {
-    def removeAll = seq foreach (_.remove)
-
-    def restoreAll = seq.reverse foreach (_.restore)
-  }
-
-
-  case class End(var prev: DequeItemLeft) extends DequeItemRight
-
-  class Start extends DequeItemLeft {
-    override var next: DequeItemRight = End(this)
-  }
-
-  case class Possibility(value: P) extends DequeObject {
-    val variants = new Deque[Variant]
-
-    def choose = {
-      val thisVariants = variants.toList
-      val cons2remove = thisVariants.map(_.value.constraint)
-      val poss2remove = cons2remove.flatMap(_.value.variants.toList.map(_.value.possibility)).toSet.toList
-      val vars2remove = poss2remove.flatMap(_.value.variants.toList).map(_.value)
-      List.empty[Removable] ++ cons2remove ++ poss2remove ++ vars2remove
-    }
-  }
-
-  case class Constraint(value: C) extends DequeObject {
-    val variants = new Deque[Variant]
-    var variantCount = 0
-  }
-
-  case class Variant(constraint: DequeItem[Constraint], possibility: DequeItem[Possibility]) extends DequeObject with Removable {
-    val constraintItem = constraint.value.variants.add(this)
-    val possibilityItem = possibility.value.variants.add(this)
-    constraint.value.variantCount += 1
-
-    def remove {
-      constraintItem.remove
-      possibilityItem.remove
-      constraint.value.variantCount -= 1
-    }
-
-    def restore {
-      constraintItem.restore
-      possibilityItem.restore
-      constraint.value.variantCount += 1
-    }
-  }
-
-  class Deque[T <: DequeObject] extends Start {
+  class Deque[T] extends Start {
     var last: DequeItemLeft = this
 
     def add(value: T) = {
@@ -120,6 +69,30 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
     }
   }
 
+  implicit class RemovableList[Q <: Removable](seq: Seq[Q]) {
+    def removeAll = seq foreach (_.remove)
+
+    def restoreAll = seq.reverse foreach (_.restore)
+  }
+
+  case class End(var prev: DequeItemLeft) extends DequeItemRight
+
+  class Start extends DequeItemLeft {
+    override var next: DequeItemRight = End(this)
+  }
+
+  case class Possibility(value: P){
+    val variants = new Deque[Variant]
+
+    def choose = {
+      val thisVariants = variants.toList
+      val cons2remove = thisVariants.map(_.value.constraint)
+      val poss2remove = cons2remove.flatMap(_.value.variants.toList.map(_.value.possibility)).toSet.toList
+      val vars2remove = poss2remove.flatMap(_.value.variants.toList).map(_.value)
+      List.empty[Removable] ++ cons2remove ++ poss2remove ++ vars2remove
+    }
+  }
+
   object Possibility {
 
     var possibilities = new Deque[Possibility]
@@ -134,10 +107,33 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
     }
   }
 
+  case class Constraint(value: C){
+    val variants = new Deque[Variant]
+    var variantCount = 0
+  }
+
   object Constraint {
     var constraints = new Deque[Constraint]
 
     val byValue = mutable.Map.empty[C, DequeItem[Constraint]].updateDefault(value => constraints.add(Constraint(value)))
+  }
+
+  case class Variant(constraint: DequeItem[Constraint], possibility: DequeItem[Possibility]) extends Removable {
+    val constraintItem = constraint.value.variants.add(this)
+    val possibilityItem = possibility.value.variants.add(this)
+    constraint.value.variantCount += 1
+
+    def remove {
+      constraintItem.remove
+      possibilityItem.remove
+      constraint.value.variantCount -= 1
+    }
+
+    def restore {
+      constraintItem.restore
+      possibilityItem.restore
+      constraint.value.variantCount += 1
+    }
   }
 
   def initialize {
