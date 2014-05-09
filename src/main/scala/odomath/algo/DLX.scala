@@ -81,7 +81,7 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
     override var next: DequeItemRight = End(this)
   }
 
-  case class Possibility(value: P){
+  case class Possibility(value: P) {
     val variants = new Deque[Variant]
 
     def choose = {
@@ -107,9 +107,15 @@ class DLX[P, C](initial: Seq[P], all: Seq[P], constraints: P => Seq[C]) {
     }
   }
 
-  case class Constraint(value: C){
+  case class Constraint(value: C) {
+    private var myVariants = 0
     val variants = new Deque[Variant]
-    var variantCount = 0
+
+    def variantCount = myVariants
+
+    def variantCount_=(variants: Int) {
+      myVariants = variants
+    }
   }
 
   object Constraint {
