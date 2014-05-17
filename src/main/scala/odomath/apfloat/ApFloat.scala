@@ -1,6 +1,6 @@
 package odomath.apfloat
 
-import org.apfloat.{Apcomplex, Apfloat}
+import org.apfloat.Apfloat
 
 /**
  * User: Oleg
@@ -8,17 +8,23 @@ import org.apfloat.{Apcomplex, Apfloat}
  * Time: 13:33
  */
 object ApFloat {
-  def apply(x: Int) = new Apfloat(x)
+  var defaultPrecision: Int = 100
 
-  def apply(x: Long) = new Apfloat(x)
+  def apply(x: Int) = new Apfloat(x,defaultPrecision)
 
-  def apply(x: Float) = new Apfloat(x)
+  def apply(x: Long) = new Apfloat(x,defaultPrecision)
 
-  def apply(x: Double) = new Apfloat(x)
+  def apply(x: Float) = new Apfloat(x,defaultPrecision)
 
-  def apply(x: String) = new Apfloat(x)
+  def apply(x: Double) = new Apfloat(x,defaultPrecision)
 
-  def apply(x: String, radix: Int) = new Apfloat(x, Apcomplex.DEFAULT, radix)
+  def apply(x: String) = new Apfloat(x,defaultPrecision)
+
+  def apply(x: String, radix: Int) = new Apfloat(x, defaultPrecision, radix)
+
+  implicit def int2Apfloat(x: Int) = new Apfloat(x,defaultPrecision)
+
+  implicit def double2Apfloat(x: Double) = new Apfloat(x,defaultPrecision)
 
   implicit object ApFloatFractional extends Fractional[Apfloat] {
     override def div(x: Apfloat, y: Apfloat): Apfloat = x divide y

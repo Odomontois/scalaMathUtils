@@ -24,20 +24,17 @@ package object prime {
         else collectPrimes(num + 2, if (sieve(num)) primes else num :: primes)
       }
       if (num * num > bound) collectPrimes(num, primes)
-      else findPrimes(num + 2,
-        if (sieve(num)) primes
-        else {
-          for (i <- num * num to bound by (num * 2)) sieve += i
-          num :: primes
-        })
+      else findPrimes(num + 2, if (sieve(num)) primes
+      else {
+        for (i <- num * num to bound by (num * 2)) sieve += i
+        num :: primes
+      })
     }
 
     findPrimes(3, List(2)).reverse.toIndexedSeq
   }
 
-  def genFactorizations[X](handle: (Int /*last number */ , Int /*last prime*/ , Int /*new prime*/ , X /*last result*/ ) => X /*new result*/ ,
-                           default: X)
-                          (bound: Int)(primeBound: Int = bound) {
+  def genFactorizations[X](handle: (Int /*last number */ , Int /*last prime*/ , Int /*new prime*/ , X /*last result*/ ) => X /*new result*/ , default: X)(bound: Int)(primeBound: Int = bound) {
     val primes = genPrimes(primeBound)
 
     type MeshElem = (Int /*number*/ , Int /*last prime index*/ , X /*result*/ )
@@ -64,17 +61,16 @@ package object prime {
 
 
   //Pure functional implementation
-  def genFactorizationsFunc[X, V](handle: (Int, Int, Int, X, V) => (X, V), default: X, start: V)
-                                 (bound: Int)(primeBound: Int = bound): V = {
+  def genFactorizationsFunc[X, V](handle: (Int, Int, Int, X, V) => (X, V), default: X, start: V)(bound: Int)(primeBound: Int = bound): V = {
     val primes = genPrimes(primeBound)
 
-    type MeshElem = (Int /*number*/ , Int /*last prime index*/ , X /*result*/ )
-    type Mesh = List[MeshElem]
+    type PileElem = (Int /*number*/ , Int /*last prime index*/ , X /*result*/ )
+    type Pile = List[PileElem]
 
-    def produce(mesh: Mesh, v: V): V = if (!mesh.isEmpty) {
+    def produce(mesh: Pile, v: V): V = if (!mesh.isEmpty) {
       val (num, lastPIndex, x) :: nextMesh = mesh;
       val mulBound = bound / num
-      def handleResult(pIndex: Int, mesh: Mesh, v: V): (Mesh, V) = {
+      def handleResult(pIndex: Int, mesh: Pile, v: V): (Pile, V) = {
         if (pIndex == primes.size) (mesh, v)
         else {
           val prime = primes(pIndex)
@@ -88,7 +84,7 @@ package object prime {
       val (iterMesh, iterV) = handleResult(lastPIndex, nextMesh, v)
       produce(iterMesh, iterV)
     } else v
-    def primesMesh(i: Int, mesh: Mesh, v: V): (Mesh, V) = if (i == primes.length) (mesh, v)
+    def primesMesh(i: Int, mesh: Pile, v: V): (Pile, V) = if (i == primes.length) (mesh, v)
     else {
       val (x, iterV) = handle(1, 1, primes(i), default, v)
       primesMesh(i + 1, (primes(i), i, x) :: mesh, iterV)
@@ -110,7 +106,7 @@ package object prime {
 
     def newValue: V
   }
-
+  abstract class FactStep[X, V](val stepTuple: HandleStepTuple[X, V]) extends FactorizationStep[X, V]
 
   type HandleStep[X, V] = (HandleStepTuple[X, V]) => _ <: FactorizationStep[X, V] with Object
 
